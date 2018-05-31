@@ -1,29 +1,25 @@
-#include <iostream>
-#include <GLFW/glfw3.h>
 #include "Player.h"
-
-using namespace std;
-
-/* Defining the width and height of the screen */
-#define WIDTH 1366
-#define HEIGHT 768
+#include "Particles.h"
 
 /* Functions prototypes */
 void render();
+void update();
+void addParticle(int type);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 /* Defining global variables*/
 GLFWwindow* window;
-Player Player1;
-
-/* Defining the vertex struct that represents the square (the player) */
-typedef struct {
-	GLfloat coords[3];
-} Vertex;
+Player *player1;
+vector<Particles *> green, red, blue;
+Screen screen;
 
 int main() {
 
 	cout << "[Loading game]" << endl;
+
+	srand(time(NULL));
+
+	player1 = new Player();
 
     /* Initialize GLFW */
     if(!glfwInit()) {
@@ -43,24 +39,30 @@ int main() {
     /* Setting the function for the user's inputs */
     glfwSetKeyCallback(window, keyCallback);
 
-    /* Inicial position for the square */ 
-    Player1.setX(WIDTH/2-50.0);
-    Player1.setY(HEIGHT/2-50.0);
-
     glViewport(0.0f, 0.0f, WIDTH, HEIGHT);
     glMatrixMode(GL_PROJECTION);
     glOrtho(0, WIDTH, 0, HEIGHT, -1, 1);
     glMatrixMode(GL_MODELVIEW);
 
+    /* Set screen limitations to detect collision */
+    screen.top = HEIGHT-SQUARE_SIZE;
+    screen.bottom = 0;
+    screen.left = 0;
+    screen.right = WIDTH-SQUARE_SIZE;
+
     /* Loop until the user closes the window */
     while(!glfwWindowShouldClose(window)) {
         
         render();
+        update();
         glfwSwapBuffers(window);
         glfwPollEvents();
 
     }
 
+    green.clear();
+    red.clear();
+    blue.clear();
     glfwTerminate();
 
 	return 0;
@@ -68,29 +70,79 @@ int main() {
 
 void render() {
 
-	GLuint vertexBuffer;
-
+	vector<Particles *>::iterator it;
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    /* Rendering the square with dynamic values that change with the user's input */
-    Vertex square[] = {
-    	{0.0f + Player1.getX(), 0.0f + Player1.getY(), 0.0f},
-    	{100.0f + Player1.getX(), 0.0f + Player1.getY(), 0.0f},
-		{100.0f + Player1.getX(), 100.0f + Player1.getY(), 0.0f},
-		{0.0f + Player1.getX(), 100.0f + Player1.getY(), 0.0f}
-	};
+    player1->draw();
 
-    glGenBuffers(1, &vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(square), square, GL_STATIC_DRAW);
+    for(it = green.begin(); it != green.end(); it++) {
+    	(*it)->draw();
+    }
+    for(it = red.begin(); it != red.end(); it++) {
+    	(*it)->draw();
+    }
+    for(it = blue.begin(); it != blue.end(); it++) {
+    	(*it)->draw();
+    }
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, sizeof(Vertex), (GLvoid *) offsetof(Vertex, coords));
+}
 
-    glColor3f(0.0f, 0.0f, 1.0f);
-    glDrawArrays(GL_QUADS, 0, 4);
-    
+void update() {
+
+	static int updateGreen;
+	static int updateRed;
+	static int updateBlue;
+
+	if(updateGreen >= TYPE_GREEN_TIME_INT) {
+		addParticle(TYPE_GREEN);
+		updateGreen = 0;
+	}
+	if(updateRed >= TYPE_RED_TIME_INT) {
+		addParticle(TYPE_RED);
+		updateRed = 0;
+	}
+	if(updateBlue >= TYPE_BLUE_TIME_INT) {
+		addParticle(TYPE_BLUE);
+		updateBlue = 0;
+	}
+
+	updateGreen++;
+	updateRed++;
+	updateBlue++;
+
+}
+
+void addParticle(int type) {
+
+	int direction, velocity;
+	double posX, posY;
+
+	direction = rand() % 4;
+	if(direction == POS_TOP) {
+		posY = HEIGHT-PARTICLE_SIZE;
+		posX = rand() % (WIDTH-PARTICLE_SIZE);
+	} else if(direction == POS_BOTTOM) {
+		posY = 0;
+		posX = rand() % (WIDTH-PARTICLE_SIZE);
+	} else if(direction == POS_LEFT) {
+		posY = rand() % (HEIGHT-PARTICLE_SIZE);
+		posX = 0;
+	} else if(direction == POS_RIGHT) {
+		posY = rand() % (HEIGHT-PARTICLE_SIZE);
+		posX = WIDTH-PARTICLE_SIZE;
+	}
+
+	velocity = 5;
+
+	if(type == TYPE_GREEN) {
+		green.push_back(new Particles(posX, posY, velocity, type, direction));
+	} else if(type == TYPE_RED) {
+		red.push_back(new Particles(posX, posY, velocity, type, direction));
+	} else if(type == TYPE_BLUE) {
+		blue.push_back(new Particles(posX, posY, velocity, type, direction));
+	}
+
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -101,14 +153,14 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 	 */
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
-    } else if(key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-    	Player1.setX(Player1.getX()+10);
-    } else if(key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-    	Player1.setX(Player1.getX()-10);
-    } else if(key == GLFW_KEY_UP && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-    	Player1.setY(Player1.getY()+10);
-    } else if(key == GLFW_KEY_DOWN && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-    	Player1.setY(Player1.getY()-10);
+    } else if(key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT) && player1->getX() < screen.right) {
+    	player1->setX(player1->getX()+10);
+    } else if(key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT) && player1->getX() >= screen.left) {
+    	player1->setX(player1->getX()-10);
+    } else if(key == GLFW_KEY_UP && (action == GLFW_PRESS || action == GLFW_REPEAT) && player1->getY() < screen.top) {
+    	player1->setY(player1->getY()+10);
+    } else if(key == GLFW_KEY_DOWN && (action == GLFW_PRESS || action == GLFW_REPEAT) && player1->getY() >= screen.bottom) {
+    	player1->setY(player1->getY()-10);
     }
 
 }
