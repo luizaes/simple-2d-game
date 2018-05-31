@@ -4,6 +4,7 @@
 /* Functions prototypes */
 void render();
 void update();
+void detectCollision(vector<Particles *>::iterator it);
 void addParticle(int type);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
@@ -11,6 +12,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 GLFWwindow* window;
 Player *player1;
 vector<Particles *> green, red, blue;
+vector< vector<Particles *>::iterator > deleteLater;
 Screen screen;
 
 int main() {
@@ -50,6 +52,9 @@ int main() {
     screen.left = 0;
     screen.right = WIDTH-SQUARE_SIZE;
 
+    cout << "Health: " << player1->getHealth() << endl;
+    cout << "Score: " << player1->getScore() << endl;
+
     /* Loop until the user closes the window */
     while(!glfwWindowShouldClose(window)) {
         
@@ -78,12 +83,15 @@ void render() {
 
     for(it = green.begin(); it != green.end(); it++) {
     	(*it)->draw();
+    	detectCollision(it);
     }
     for(it = red.begin(); it != red.end(); it++) {
     	(*it)->draw();
+    	detectCollision(it);
     }
     for(it = blue.begin(); it != blue.end(); it++) {
     	(*it)->draw();
+    	detectCollision(it);
     }
 
 }
@@ -93,6 +101,7 @@ void update() {
 	static int updateGreen;
 	static int updateRed;
 	static int updateBlue;
+	vector< vector<Particles *>::iterator >::iterator it;
 
 	if(updateGreen >= TYPE_GREEN_TIME_INT) {
 		addParticle(TYPE_GREEN);
@@ -111,6 +120,43 @@ void update() {
 	updateRed++;
 	updateBlue++;
 
+	for(it = deleteLater.begin(); it != deleteLater.end(); it++) {
+    	
+		if((**it)->getType() == TYPE_GREEN) {
+			green.erase(*it);
+		} else if((**it)->getType() == TYPE_RED) {
+			red.erase(*it);
+		} else if((**it)->getType() == TYPE_BLUE) {
+			blue.erase(*it);
+		}
+    }
+    deleteLater.clear();
+
+}
+
+void detectCollision(vector<Particles *>::iterator it) {
+	if(!((*it)->getX() + PARTICLE_SIZE/2 <= player1->getX() - SQUARE_SIZE/2 || (*it)->getX() - PARTICLE_SIZE/2 >= player1->getX() + SQUARE_SIZE/2 || (*it)->getY() + PARTICLE_SIZE/2 <= player1->getY() - SQUARE_SIZE/2 || (*it)->getY() - PARTICLE_SIZE/2 >= player1->getY() + SQUARE_SIZE/2)) {
+   		(*it)->setState(false);
+   		if((*it)->getType() == TYPE_GREEN) {
+   			player1->setScore(100);
+   			deleteLater.push_back(it);
+   		} else if((*it)->getType() == TYPE_RED) {
+   			player1->setHealth(-100);
+   			deleteLater.push_back(it);
+   		} else if((*it)->getType() == TYPE_BLUE) {
+   			player1->setHealth(100);
+   			deleteLater.push_back(it);
+   		}
+
+   		if(player1->getHealth() <= 0) {
+   			cout << "GAME OVER" << endl;
+   			glfwSetWindowShouldClose(window, GL_TRUE);
+    		cout << "FINAL SCORE: " << player1->getScore() << endl;
+    		return;
+   		}
+   		cout << "Health: " << player1->getHealth() << endl;
+    	cout << "Score: " << player1->getScore() << endl;
+    }
 }
 
 void addParticle(int type) {

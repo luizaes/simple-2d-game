@@ -8,6 +8,9 @@ private:
 public:
 	Player();
 	int getHealth();
+	int getScore();
+	void setHealth(int number);
+	void setScore(int number);
 	double getX();
 	double getY();
 	void setX(double number);

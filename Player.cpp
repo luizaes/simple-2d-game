@@ -29,6 +29,18 @@ void Player::setY(double number) {
 	y = number;
 }
 
+int Player::getScore() {
+	return score;
+}
+
+void Player::setHealth(int number) {
+	health += number;
+}
+
+void Player::setScore(int number) {
+	score += number;
+}
+
 void Player::draw() {
 	
 	GLuint vertexBuffer;
