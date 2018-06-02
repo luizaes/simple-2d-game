@@ -2,6 +2,8 @@
 #define DEFINITIONS_H
 
 #include <GLFW/glfw3.h>
+#include <FTGL/ftgl.h>
+#include <freetype2/ft2build.h>
 #include <iostream>
 #include <cstdlib>
 #include <ctime>

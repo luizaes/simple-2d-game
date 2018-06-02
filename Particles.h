@@ -19,5 +19,4 @@ public:
 	void setX(double number);
 	void setY(double number);
 	void draw();
-
 };

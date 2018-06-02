@@ -4,6 +4,7 @@
 /* Functions prototypes */
 void render();
 void update();
+void displayScore();
 void detectCollision(vector<Particles *>::iterator it);
 void addParticle(int type);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -52,17 +53,13 @@ int main() {
     screen.left = 0;
     screen.right = WIDTH-SQUARE_SIZE;
 
-    cout << "Health: " << player1->getHealth() << endl;
-    cout << "Score: " << player1->getScore() << endl;
-
     /* Loop until the user closes the window */
-    while(!glfwWindowShouldClose(window)) {
-        
-        render();
-        update();
+    while(!glfwWindowShouldClose(window)) {	       
+       	render();
+      	update();
+      	displayScore();	
         glfwSwapBuffers(window);
         glfwPollEvents();
-
     }
 
     green.clear();
@@ -73,6 +70,7 @@ int main() {
 	return 0;
 }
 
+/* Render the player and the squares */
 void render() {
 
 	vector<Particles *>::iterator it;
@@ -96,6 +94,7 @@ void render() {
 
 }
 
+/* Delete particles that collided with the player and create new particles */
 void update() {
 
 	static int updateGreen;
@@ -134,6 +133,34 @@ void update() {
 
 }
 
+/* Displays the player's score and health in the screen */
+void displayScore() {
+
+	char health[50];
+	char score[50];
+
+	sprintf(health, "Health: %d", player1->getHealth());
+	sprintf(score, "Score: %d", player1->getScore());
+
+	FTGLPixmapFont font("FreeSans.ttf");
+	FTPoint coordHealth(50, 100, 0);
+	FTPoint coordScore(50, 150, 0);
+
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+
+	glColor3f(1.0, 0.0, 0.0);
+	font.FaceSize(24);
+	font.Render(health, -1 , coordHealth);
+	font.Render(score, -1 , coordScore);
+
+	glPopAttrib();
+}
+
+/* Detects collisions between squares and the player
+   TODO: Fix this function, because in certain cases it doesn't work properly.  
+*/
 void detectCollision(vector<Particles *>::iterator it) {
 	if(!((*it)->getX() + PARTICLE_SIZE/2 <= player1->getX() - SQUARE_SIZE/2 || (*it)->getX() - PARTICLE_SIZE/2 >= player1->getX() + SQUARE_SIZE/2 || (*it)->getY() + PARTICLE_SIZE/2 <= player1->getY() - SQUARE_SIZE/2 || (*it)->getY() - PARTICLE_SIZE/2 >= player1->getY() + SQUARE_SIZE/2)) {
    		(*it)->setState(false);
@@ -151,14 +178,13 @@ void detectCollision(vector<Particles *>::iterator it) {
    		if(player1->getHealth() <= 0) {
    			cout << "GAME OVER" << endl;
    			glfwSetWindowShouldClose(window, GL_TRUE);
-    		cout << "FINAL SCORE: " << player1->getScore() << endl;
-    		return;
    		}
-   		cout << "Health: " << player1->getHealth() << endl;
-    	cout << "Score: " << player1->getScore() << endl;
     }
 }
 
+/* Adds new particles in the game, 
+   generating random values to choose which side and position of the screen the particle is gonna come from 
+*/
 void addParticle(int type) {
 
 	int direction, velocity;
@@ -191,12 +217,12 @@ void addParticle(int type) {
 
 }
 
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-
-	/* Input treatment:
+/* Input treatment:
 		Escape key - close game;
 		Arrow keys - move the square.
-	 */
+*/
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
     } else if(key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT) && player1->getX() < screen.right) {
