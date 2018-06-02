@@ -15,6 +15,7 @@ Player *player1;
 vector<Particles *> green, red, blue;
 vector< vector<Particles *>::iterator > deleteLater;
 Screen screen;
+ALuint sources[4];
 
 int main() {
 
@@ -23,6 +24,45 @@ int main() {
 	srand(time(NULL));
 
 	player1 = new Player();
+
+	/* Loading OpenAL sounds */
+	ALCdevice *device;
+	ALCcontext *context;
+	ALuint buffers[4];
+	ALint source_state;
+	ALsizei size, freq;
+	ALenum format;
+	ALvoid *data;
+	ALboolean loop = AL_FALSE;
+
+	device = alcOpenDevice(NULL);
+	if (!device) {
+	    return -1;
+	}
+
+	context = alcCreateContext(device, NULL);
+	if (!alcMakeContextCurrent(context)) {
+		return -1;    
+	}
+
+	alGenSources((ALuint)4, sources);
+	alGenBuffers((ALuint)4, buffers);
+
+	alutLoadWAVFile((ALbyte*)"Sounds/Bit Quest.wav", &format, &data, &size, &freq, &loop);
+	alBufferData(buffers[0], format, data, size, freq);
+	alSourcei(sources[0], AL_BUFFER, buffers[0]);
+
+	alutLoadWAVFile((ALbyte*)"Sounds/sfx_coin_double7.wav", &format, &data, &size, &freq, &loop);
+	alBufferData(buffers[1], format, data, size, freq);
+	alSourcei(sources[1], AL_BUFFER, buffers[1]);
+
+	alutLoadWAVFile((ALbyte*)"Sounds/sfx_exp_shortest_soft7.wav", &format, &data, &size, &freq, &loop);
+	alBufferData(buffers[2], format, data, size, freq);
+	alSourcei(sources[2], AL_BUFFER, buffers[2]);
+
+	alutLoadWAVFile((ALbyte*)"Sounds/sfx_sounds_powerup10.wav", &format, &data, &size, &freq, &loop);
+	alBufferData(buffers[3], format, data, size, freq);
+	alSourcei(sources[3], AL_BUFFER, buffers[3]);
 
     /* Initialize GLFW */
     if(!glfwInit()) {
@@ -53,8 +93,10 @@ int main() {
     screen.left = 0;
     screen.right = WIDTH-SQUARE_SIZE;
 
+    alSourcePlay(sources[0]);
+
     /* Loop until the user closes the window */
-    while(!glfwWindowShouldClose(window)) {	       
+    while(!glfwWindowShouldClose(window)) {	  
        	render();
       	update();
       	displayScore();	
@@ -62,6 +104,12 @@ int main() {
         glfwPollEvents();
     }
 
+    alDeleteSources(4, sources);
+	alDeleteBuffers(4, buffers);
+	device = alcGetContextsDevice(context);
+	alcMakeContextCurrent(NULL);
+	alcDestroyContext(context);
+	alcCloseDevice(device);
     green.clear();
     red.clear();
     blue.clear();
@@ -142,7 +190,7 @@ void displayScore() {
 	sprintf(health, "Health: %d", player1->getHealth());
 	sprintf(score, "Score: %d", player1->getScore());
 
-	FTGLPixmapFont font("FreeSans.ttf");
+	FTGLPixmapFont font("8-Bit.ttf");
 	FTPoint coordHealth(50, 100, 0);
 	FTPoint coordScore(50, 150, 0);
 
@@ -151,7 +199,7 @@ void displayScore() {
 	glDisable(GL_DEPTH_TEST);
 
 	glColor3f(1.0, 0.0, 0.0);
-	font.FaceSize(24);
+	font.FaceSize(30);
 	font.Render(health, -1 , coordHealth);
 	font.Render(score, -1 , coordScore);
 
@@ -165,12 +213,15 @@ void detectCollision(vector<Particles *>::iterator it) {
 	if(!((*it)->getX() + PARTICLE_SIZE/2 <= player1->getX() - SQUARE_SIZE/2 || (*it)->getX() - PARTICLE_SIZE/2 >= player1->getX() + SQUARE_SIZE/2 || (*it)->getY() + PARTICLE_SIZE/2 <= player1->getY() - SQUARE_SIZE/2 || (*it)->getY() - PARTICLE_SIZE/2 >= player1->getY() + SQUARE_SIZE/2)) {
    		(*it)->setState(false);
    		if((*it)->getType() == TYPE_GREEN) {
+   			alSourcePlay(sources[1]);
    			player1->setScore(100);
    			deleteLater.push_back(it);
    		} else if((*it)->getType() == TYPE_RED) {
+   			alSourcePlay(sources[2]);
    			player1->setHealth(-100);
    			deleteLater.push_back(it);
    		} else if((*it)->getType() == TYPE_BLUE) {
+   			alSourcePlay(sources[3]);
    			player1->setHealth(100);
    			deleteLater.push_back(it);
    		}

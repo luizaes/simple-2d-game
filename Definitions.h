@@ -4,6 +4,9 @@
 #include <GLFW/glfw3.h>
 #include <FTGL/ftgl.h>
 #include <freetype2/ft2build.h>
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alut.h>
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
@@ -31,6 +34,7 @@ using namespace std;
 /* Defining the vertex struct that represents the square (the player) */
 typedef struct {
 	GLfloat coords[3];
+	GLfloat text[3];
 } Vertex;
 
 typedef struct {
