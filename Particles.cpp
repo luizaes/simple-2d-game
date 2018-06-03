@@ -50,12 +50,15 @@ int Particles::getType() {
 
 void Particles::draw() {
 
-	GLuint vertexBuff;
+	GLuint vertexBuff, textureBuffer;
+	ILuint image;
+	ILboolean success;
+
 	Vertex square[] = {
-   		{x, y, 0.0f},
-   		{x + PARTICLE_SIZE, y, 0.0f},
-		{x + PARTICLE_SIZE, y + PARTICLE_SIZE, 0.0f},
-		{x, y + PARTICLE_SIZE, 0.0f}
+    	{{x, y, 0.0f}, {1.0f, 1.0f}},
+    	{{x + PARTICLE_SIZE, y, 0.0f}, {0.0f, 1.0f}},
+		{{x + PARTICLE_SIZE, y + PARTICLE_SIZE, 0.0f}, {0.0f, 0.0f}},
+		{{x, y + PARTICLE_SIZE, 0.0f}, {1.0f, 0.0f}}
 	};
 
 	if(alive) {
@@ -80,16 +83,37 @@ void Particles::draw() {
 
 	    glEnableClientState(GL_VERTEX_ARRAY);
 	    glVertexPointer(3, GL_FLOAT, sizeof(Vertex), (GLvoid *) offsetof(Vertex, coords));
+	    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    	glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), (GLvoid *) offsetof(Vertex, text));
+
+    	ilGenImages(1, &image); 
+	    ilBindImage(image);
 
 	    if(type == TYPE_GREEN) {
-	    	glColor3f(0.0f, 1.0f, 0.0f);
+	    	ilLoadImage("Images/coin.png");
 	    } else if(type == TYPE_RED) {
-	    	glColor3f(1.0f, 0.0f, 0.0f);
+	    	ilLoadImage("Images/fire.png");
 	    } else if(type == TYPE_BLUE) {
-	    	glColor3f(0.0f, 0.0f, 1.0f);
+	    	ilLoadImage("Images/heart.png");
 	    }
-	 	
+
+	    glEnable(GL_TEXTURE_2D);
+	    glEnable(GL_BLEND);
+	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	    
+	    glGenTextures(1, &textureBuffer);
+	    glBindTexture(GL_TEXTURE_2D, textureBuffer); 
+
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	    glTexImage2D(GL_TEXTURE_2D, 0, ilGetInteger(IL_IMAGE_BPP), ilGetInteger(IL_IMAGE_WIDTH), ilGetInteger(IL_IMAGE_HEIGHT), 0, ilGetInteger(IL_IMAGE_FORMAT), GL_UNSIGNED_BYTE, ilGetData());
+	    
 	    glDrawArrays(GL_QUADS, 0, 4);
+	    ilDeleteImages(1, &image);
+	    glDisable(GL_TEXTURE_2D);
+	    glDisable(GL_BLEND);
 	}
   
 }

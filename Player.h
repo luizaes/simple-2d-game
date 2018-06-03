@@ -1,9 +1,9 @@
 class Player {
 
 private:
-	int health;
-	int score;
+	int health, score, action, direction;
 	double x, y;
+	bool moving;
 
 public:
 	Player();
@@ -15,5 +15,6 @@ public:
 	double getY();
 	void setX(double number);
 	void setY(double number);
+	void setMoving(int dir, int act);
 	void draw();
 };

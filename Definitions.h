@@ -7,6 +7,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alut.h>
+#include <IL/il.h>
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
@@ -34,7 +35,7 @@ using namespace std;
 /* Defining the vertex struct that represents the square (the player) */
 typedef struct {
 	GLfloat coords[3];
-	GLfloat text[3];
+	GLfloat text[2];
 } Vertex;
 
 typedef struct {

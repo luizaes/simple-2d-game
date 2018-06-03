@@ -69,6 +69,8 @@ int main() {
         return -1;
     }
 
+	ilInit();
+
     /* Create a fullscreen window (1366x768) and its OpenGL context */
     window = glfwCreateWindow(WIDTH, HEIGHT, "Dots", glfwGetPrimaryMonitor(), NULL);
     if(!window) {
@@ -278,12 +280,18 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         glfwSetWindowShouldClose(window, GL_TRUE);
     } else if(key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT) && player1->getX() < screen.right) {
     	player1->setX(player1->getX()+10);
+    	player1->setMoving(key, action);
     } else if(key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT) && player1->getX() >= screen.left) {
     	player1->setX(player1->getX()-10);
+    	player1->setMoving(key, action);
     } else if(key == GLFW_KEY_UP && (action == GLFW_PRESS || action == GLFW_REPEAT) && player1->getY() < screen.top) {
     	player1->setY(player1->getY()+10);
+    	player1->setMoving(key, action);
     } else if(key == GLFW_KEY_DOWN && (action == GLFW_PRESS || action == GLFW_REPEAT) && player1->getY() >= screen.bottom) {
     	player1->setY(player1->getY()-10);
+    	player1->setMoving(key, action);
+    } else if((key == GLFW_KEY_DOWN || key == GLFW_KEY_UP || key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT) && action == GLFW_RELEASE) {
+    	player1->setMoving(key, action);
     }
 
 }
