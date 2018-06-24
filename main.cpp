@@ -2,9 +2,14 @@
 #include "Particles.h"
 
 /* Functions prototypes */
-void render();
-void update();
+void renderGame();
+void renderMenu();
+void drawTitle();
+void renderOverScreen();
+void updateGame();
+void drawGameOverText();
 void displayScore();
+void drawBackground();
 void detectCollision(vector<Particles *>::iterator it);
 void addParticle(int type);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -15,7 +20,9 @@ Player *player1;
 vector<Particles *> green, red, blue;
 vector< vector<Particles *>::iterator > deleteLater;
 Screen screen;
+GLuint vertexBuffMain, textureBufferMain;
 ALuint sources[4];
+int gameWindowState;
 
 int main() {
 
@@ -44,7 +51,7 @@ int main() {
 	if (!alcMakeContextCurrent(context)) {
 		return -1;    
 	}
-
+	
 	alGenSources((ALuint)4, sources);
 	alGenBuffers((ALuint)4, buffers);
 
@@ -72,7 +79,7 @@ int main() {
 	ilInit();
 
     /* Create a fullscreen window (1366x768) and its OpenGL context */
-    window = glfwCreateWindow(WIDTH, HEIGHT, "Dots", glfwGetPrimaryMonitor(), NULL);
+    window = glfwCreateWindow(WIDTH, HEIGHT, "Game", glfwGetPrimaryMonitor(), NULL);
     if(!window) {
         glfwTerminate();
         return -1;
@@ -95,17 +102,38 @@ int main() {
     screen.left = 0;
     screen.right = WIDTH-SQUARE_SIZE;
 
+    alSourcei(sources[0], AL_LOOPING, 1);
     alSourcePlay(sources[0]);
+
+    gameWindowState = WINDOW_STATE_MENU;
 
     /* Loop until the user closes the window */
     while(!glfwWindowShouldClose(window)) {	  
-       	render();
-      	update();
-      	displayScore();	
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+
+    	if(gameWindowState == WINDOW_STATE_MENU) {
+    		while(gameWindowState == WINDOW_STATE_MENU) {
+    			renderMenu();
+    			glfwSwapBuffers(window);
+		        glfwPollEvents();
+    		}
+    	} else if(gameWindowState == WINDOW_STATE_PLAYING) {
+    		while(gameWindowState == WINDOW_STATE_PLAYING) {
+    			renderGame();
+		      	updateGame();
+		      	displayScore();	
+		        glfwSwapBuffers(window);
+		        glfwPollEvents();
+    		}
+    	} else if(gameWindowState == WINDOW_STATE_GAME_OVER) {
+    		renderOverScreen();
+    		glfwSwapBuffers(window);
+		    glfwPollEvents();
+    	}
+
     }
 
+    glDeleteBuffers(1, &vertexBuffMain);
+	glDeleteTextures(1, &textureBufferMain);
     alDeleteSources(4, sources);
 	alDeleteBuffers(4, buffers);
 	device = alcGetContextsDevice(context);
@@ -115,13 +143,128 @@ int main() {
     green.clear();
     red.clear();
     blue.clear();
+    deleteLater.clear();
     glfwTerminate();
 
 	return 0;
 }
+/*
+void drawBackground() {
+
+	ILuint image;
+	ILboolean success;
+
+	Vertex screen[] = {
+    	{{0.0f, HEIGHT, 0.0f}, {0.0f, 0.0f}},
+    	{{WIDTH, HEIGHT, 0.0f}, {1.0f, 0.0f}},
+		{{WIDTH, 0.0f, 0.0f}, {1.0f, 1.0f}},
+		{{0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}}
+	};
+
+    glGenBuffers(1, &vertexBuffMain);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffMain);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(screen), screen, GL_STATIC_DRAW);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, sizeof(Vertex), (GLvoid *) offsetof(Vertex, coords));
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), (GLvoid *) offsetof(Vertex, text));
+
+	ilGenImages(1, &image); 
+    ilBindImage(image);
+
+    ilLoadImage("Images/background.png");
+
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    glGenTextures(1, &textureBufferMain);
+    glBindTexture(GL_TEXTURE_2D, textureBufferMain); 
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, ilGetInteger(IL_IMAGE_BPP), ilGetInteger(IL_IMAGE_WIDTH), ilGetInteger(IL_IMAGE_HEIGHT), 0, ilGetInteger(IL_IMAGE_FORMAT), GL_UNSIGNED_BYTE, ilGetData());
+    
+    glDrawArrays(GL_QUADS, 0, 4);
+    ilDeleteImages(1, &image);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+}
+*/
+/* Render the menu screen */
+void renderMenu() {
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //drawBackground();
+    drawTitle();
+
+}
+
+void drawTitle() {
+
+	char title[50];
+	char message[50];
+
+	sprintf(title, "DOTS");
+	sprintf(message, "PRESS ENTER TO START");
+
+	FTGLPixmapFont font("8-Bit.ttf");
+	FTPoint coordTitle(420, 380, 0);
+	FTPoint coordMessage(400, 330, 0);
+
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+
+	glColor3f(1.0, 0.0, 0.0);
+	font.FaceSize(60);
+	//font.Render(title, -1 , coordTitle);
+	font.Render(message, -1 , coordMessage);
+
+	glPopAttrib();
+
+}
+
+/* Render the game over screen */
+void renderOverScreen() {
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //drawBackground();
+    drawGameOverText();
+
+}
+
+void drawGameOverText() {
+
+	char score[50];
+	char message[50];
+
+	sprintf(message, "GAME OVER");
+	sprintf(score, "Final Score: %d", player1->getScore());
+
+	FTGLPixmapFont font("8-Bit.ttf");
+	FTPoint coordMessage(535, 380, 0);
+	FTPoint coordScore(475, 330, 0);
+
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+
+	glColor3f(1.0, 0.0, 0.0);
+	font.FaceSize(60);
+	font.Render(message, -1 , coordMessage);
+	font.Render(score, -1 , coordScore);
+
+	glPopAttrib();
+}
 
 /* Render the player and the squares */
-void render() {
+void renderGame() {
 
 	vector<Particles *>::iterator it;
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -145,7 +288,7 @@ void render() {
 }
 
 /* Delete particles that collided with the player and create new particles */
-void update() {
+void updateGame() {
 
 	static int updateGreen;
 	static int updateRed;
@@ -208,8 +351,7 @@ void displayScore() {
 	glPopAttrib();
 }
 
-/* Detects collisions between squares and the player
-   TODO: Fix this function, because in certain cases it doesn't work properly.  
+/* Detects collisions between squares and the player 
 */
 void detectCollision(vector<Particles *>::iterator it) {
 	if(!((*it)->getX() + PARTICLE_SIZE/2 <= player1->getX() - SQUARE_SIZE/2 || (*it)->getX() - PARTICLE_SIZE/2 >= player1->getX() + SQUARE_SIZE/2 || (*it)->getY() + PARTICLE_SIZE/2 <= player1->getY() - SQUARE_SIZE/2 || (*it)->getY() - PARTICLE_SIZE/2 >= player1->getY() + SQUARE_SIZE/2)) {
@@ -218,19 +360,24 @@ void detectCollision(vector<Particles *>::iterator it) {
    			alSourcePlay(sources[1]);
    			player1->setScore(100);
    			deleteLater.push_back(it);
+   			(*it)->setState(false);
    		} else if((*it)->getType() == TYPE_RED) {
    			alSourcePlay(sources[2]);
    			player1->setHealth(-100);
    			deleteLater.push_back(it);
+   			(*it)->setState(false);
    		} else if((*it)->getType() == TYPE_BLUE) {
    			alSourcePlay(sources[3]);
    			player1->setHealth(100);
    			deleteLater.push_back(it);
+   			(*it)->setState(false);
    		}
 
    		if(player1->getHealth() <= 0) {
-   			cout << "GAME OVER" << endl;
-   			glfwSetWindowShouldClose(window, GL_TRUE);
+   			//cout << "[GAME OVER]" << endl;
+   			gameWindowState = WINDOW_STATE_GAME_OVER;
+   			glDeleteBuffers(1, player1->getVertexBuffer());
+			glDeleteTextures(1, player1->getTextureBuffer());
    		}
     }
 }
@@ -278,6 +425,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
+        gameWindowState = WINDOW_STATE_GAME_OVER;
     } else if(key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT) && player1->getX() < screen.right) {
     	player1->setX(player1->getX()+10);
     	player1->setMoving(key, action);
@@ -292,6 +440,8 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     	player1->setMoving(key, action);
     } else if((key == GLFW_KEY_DOWN || key == GLFW_KEY_UP || key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT) && action == GLFW_RELEASE) {
     	player1->setMoving(key, action);
+    } else if(key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
+    	gameWindowState = WINDOW_STATE_PLAYING;
     }
 
 }

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <cstring>
 #include <vector>
 
 using namespace std;
@@ -26,6 +27,9 @@ using namespace std;
 #define POS_BOTTOM 1
 #define POS_LEFT 2
 #define POS_RIGHT 3
+#define WINDOW_STATE_MENU 7
+#define WINDOW_STATE_GAME_OVER 8
+#define WINDOW_STATE_PLAYING 9
 #define PARTICLE_SIZE 50
 #define SQUARE_SIZE 100
 #define TYPE_GREEN_TIME_INT 100

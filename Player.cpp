@@ -30,6 +30,14 @@ void Player::setY(double number) {
 	y = number;
 }
 
+GLuint * Player::getVertexBuffer() {
+	return &vertexBuffer;
+}
+
+GLuint * Player::getTextureBuffer() {
+	return &textureBuffer;
+}
+
 void Player::setMoving(int dir, int act) {
 	moving = true;
 	direction = dir;
@@ -50,7 +58,6 @@ void Player::setScore(int number) {
 
 void Player::draw() {
 	
-	GLuint vertexBuffer, textureBuffer;
 	ILuint image;
 	ILboolean success;
 
@@ -64,7 +71,7 @@ void Player::draw() {
 
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(square), square, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(square), square, GL_DYNAMIC_DRAW);
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, sizeof(Vertex), (GLvoid *) offsetof(Vertex, coords));
@@ -106,7 +113,7 @@ void Player::draw() {
     glTexImage2D(GL_TEXTURE_2D, 0, ilGetInteger(IL_IMAGE_BPP), ilGetInteger(IL_IMAGE_WIDTH), ilGetInteger(IL_IMAGE_HEIGHT), 0, ilGetInteger(IL_IMAGE_FORMAT), GL_UNSIGNED_BYTE, ilGetData());
     
     glDrawArrays(GL_QUADS, 0, 4);
-    ilDeleteImages(1, &image);
+    
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_BLEND);
 }

@@ -7,6 +7,7 @@ private:
 	int type, startPosition;
 	bool alive;
 	Screen screen;
+	GLuint vertexBuff, textureBuffer;
 
 public:
 	Particles(double numX, double numY, double veloc, int ty, int start);
